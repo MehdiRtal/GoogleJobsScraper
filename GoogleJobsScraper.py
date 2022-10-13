@@ -1,5 +1,5 @@
 from playwright.sync_api import sync_playwright
-from playwright_stealth import stealth_sync
+from multiprocessing import Process
 import urllib.parse
 import argparse
 import re
@@ -15,15 +15,11 @@ parser.add_argument("-o")
 args = parser.parse_args()
 
 
-if __name__ == "__main__":
+def scrape_pages(pages):
     with sync_playwright() as p:
-        browser = p.firefox.launch(headless=False)
-        context = browser.new_context()
-        page = context.new_page()
-        stealth_sync(page)
-        page.goto(f"https://careers.google.com/jobs/results/?degree={args.degree}&employment_type={args.type}&has_remote={args.remote}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
-        pages_count = int("".join(re.findall("\d", page.locator("css=[class='gc-h-flex gc-sidebar__pagination--page']").inner_text())[1:]))
-        for i in range(1, pages_count):
+        browser = p.firefox.launch(headless=True)
+        page = browser.new_page()
+        for i in pages:
             page.goto(f"https://careers.google.com/jobs/results/?degree={args.degree}&employment_type={args.type}&has_remote={args.remote}&page={i}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
             jobs = []
             for j in range(20):
@@ -37,4 +33,23 @@ if __name__ == "__main__":
                         f.write(title + "|" + link + "\n")
                 else:
                     print(link)
+            browser.close()
+
+
+if __name__ == "__main__":
+    with sync_playwright() as p:
+        browser = p.firefox.launch(headless=True)
+        page = browser.new_page()
+        page.goto(f"https://careers.google.com/jobs/results/?degree={args.degree}&employment_type={args.type}&has_remote={args.remote}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
+        pages_count = int("".join(re.findall("\d", page.locator("css=[class='gc-h-flex gc-sidebar__pagination--page']").inner_text())[1:]))
+        pages = []
+        for i in range(pages_count):
+            pages.append(i)
+        processes = []
+        for j in range(4):
+            p = Process(target=scrape_pages, args=(pages[j::4],))
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
         browser.close()
