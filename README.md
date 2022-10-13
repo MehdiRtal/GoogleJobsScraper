@@ -12,4 +12,4 @@ Scrape all jobs from Google Jobs website.
 		*  `-type`
 		*  `-degree`
 		*  `-location`
-    *  `-remote`
+    		*  `-remote`
