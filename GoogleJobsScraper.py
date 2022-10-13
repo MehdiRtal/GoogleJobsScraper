@@ -28,7 +28,10 @@ if __name__ == "__main__":
             page.goto(f"https://careers.google.com/jobs/results/?{degree}&employment_type={args.type}&has_remote={args.remote}&page={i}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
             jobs = []
             for j in range(20):
-                jobs.append("https://careers.google.com" + page.locator("id=search-results").locator("css=li").locator("css=a[class='gc-card']").nth(j).get_attribute("href"))
+                try:
+                    jobs.append("https://careers.google.com" + page.locator("id=search-results").locator("css=li").locator("css=a[class='gc-card']").nth(j).get_attribute("href", timeout=1000))
+                except:
+                    break
             for job in jobs:
                 page.goto(job)
                 title = page.locator("css=[class='gc-card__title gc-job-detail__title gc-heading gc-heading--beta']").inner_text().strip()
