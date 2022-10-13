@@ -1,5 +1,4 @@
 from playwright.sync_api import sync_playwright
-from multiprocessing import Process
 import urllib.parse
 import argparse
 import re
@@ -19,10 +18,14 @@ if __name__ == "__main__":
     with sync_playwright() as p:
         browser = p.firefox.launch(headless=False)
         page = browser.new_page()
-        page.goto(f"https://careers.google.com/jobs/results/?degree={args.degree}&employment_type={args.type}&has_remote={args.remote}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
+        if args.degree == "ENTRY_LEVEL":
+            degree = "jex=ENTRY_LEVEL"
+        else:
+            degree= f"degree={args.degree}"
+        page.goto(f"https://careers.google.com/jobs/results/?{degree}&employment_type={args.type}&has_remote={args.remote}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
         pages_count = int("".join(re.findall("\d", page.locator("css=[class='gc-h-flex gc-sidebar__pagination--page']").inner_text())[1:]))
-        for i in range(1, pages_count):
-            page.goto(f"https://careers.google.com/jobs/results/?degree={args.degree}&employment_type={args.type}&has_remote={args.remote}&page={i}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
+        for i in range(1, pages_count+1):
+            page.goto(f"https://careers.google.com/jobs/results/?{degree}&employment_type={args.type}&has_remote={args.remote}&page={i}&location={urllib.parse.quote(args.location)}&skills={args.skills}")
             jobs = []
             for j in range(20):
                 jobs.append("https://careers.google.com" + page.locator("id=search-results").locator("css=li").locator("css=a[class='gc-card']").nth(j).get_attribute("href"))
